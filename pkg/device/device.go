@@ -33,7 +33,6 @@ func (d *Device)addOperable(name string) (*Operable,error){
 	r:= bufio.NewReader(d.conn)
 	wr := bufio.NewReadWriter(r,w)
 	d.Operables[name]=NewOperable(name,wr)
-	fmt.Printf("%#v\n",d)
 	return d.Operables[name],nil
 }
 

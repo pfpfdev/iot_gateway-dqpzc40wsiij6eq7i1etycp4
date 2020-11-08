@@ -75,7 +75,6 @@ func DeviceGC(){
 	const Cycle = 10 * time.Second
 	for{
 		for name,device := range Devices {
-			print(name)
 			if device.LastAlive.Before(time.Now().Add(-Cycle)) {
 				device.Close()
 				delete(Devices,name)
