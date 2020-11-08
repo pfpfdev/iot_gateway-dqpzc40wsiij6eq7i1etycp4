@@ -5,13 +5,13 @@ import (
 )
 
 const (
-	INITIALIZING = "INITIALIZING"
-	CONNECTED = "CONNECTED"
-	DISCONNECTED = "DISCONNECTED"
+	INITIALIZING = iota
+	CONNECTED
+	DISCONNECTED
 )
 
 type State struct{
-	value string
+	value int
 	mutex sync.Mutex
 }
 
@@ -21,13 +21,13 @@ func NewState()*State{
 	}
 }
 
-func (s *State)Set(_value string){
+func (s *State)Set(_value int){
 	s.mutex.Lock()
 	s.value  =  _value
 	s.mutex.Unlock()
 }
 
-func (s *State)IsSame(_value string)bool{
+func (s *State)IsSame(_value int)bool{
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	return _value == s.value

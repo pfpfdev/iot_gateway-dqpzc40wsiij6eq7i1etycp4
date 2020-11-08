@@ -10,14 +10,11 @@ import (
 	"bufio"
 )
 
-const defaultLifetime = 10
-
 type Device struct{
 	Name string
 	conn net.Conn 
 	Operables map[string]*Operable
-	State *State
-	lifetime uint32
+	state *State
 	LastAlive time.Time
 }
 
@@ -26,8 +23,8 @@ func NewDevice(name string,_conn net.Conn) *Device{
 		Name:name,
 		conn:_conn,
 		Operables:make(map[string]*Operable),
-		State: NewState(),
-		lifetime: defaultLifetime,
+		state: NewState(),
+		LastAlive:time.Now(),
 	}
 }
 
@@ -41,14 +38,18 @@ func (d *Device)addOperable(name string) (*Operable,error){
 }
 
 func (d *Device)finishInit()error{
-	d.State.Set(CONNECTED)
+	d.state.Set(CONNECTED)
 	return nil
+}
+
+func (d *Device)Close(){
+	d.conn.Close()
 }
 
 func (d* Device)Parse(data string){
 	d.LastAlive = time.Now()
 	strs := strings.Split(data," ")
-	if d.State.IsSame(INITIALIZING) {
+	if d.state.IsSame(INITIALIZING) {
 		log.Print("String From ",d.Name," : ",data)
 		switch strs[0] {
 		case "ADD":

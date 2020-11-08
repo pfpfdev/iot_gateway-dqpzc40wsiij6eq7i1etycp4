@@ -6,6 +6,7 @@ import (
 	"../pkg/device"
 	"log"
 	"strings"
+	"time"
 )
 
 func SocketServer(){
@@ -17,6 +18,8 @@ func SocketServer(){
 	}
 	log.Print("Socket Server Started")
 	defer listener.Close()
+
+	go DeviceGC()
 
 	//コネクションのハンドリング
     for {
@@ -65,5 +68,19 @@ func handler(conn net.Conn){
 			return
 		}
 		d.Parse(str[:len(str)-1])
+	}
+}
+
+func DeviceGC(){
+	const Cycle = 10 * time.Second
+	for{
+		for name,device := range Devices {
+			print(name)
+			if device.LastAlive.Before(time.Now().Add(-Cycle)) {
+				device.Close()
+				delete(Devices,name)
+			}
+		}
+		time.Sleep(Cycle)
 	}
 }
