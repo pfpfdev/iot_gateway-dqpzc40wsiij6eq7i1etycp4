@@ -1,4 +1,4 @@
-package operable
+package device
 
 import (
 	"regexp"

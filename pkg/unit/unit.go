@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 	. "../user"
-	. "../operable"
+	. "../device"
 	"log"
 )
 

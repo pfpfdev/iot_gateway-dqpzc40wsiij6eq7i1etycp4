@@ -4,10 +4,12 @@ import (
 	"errors"
 )
 
-func WrongStateErr(trueState string)error{
-	return errors.New("Wrong State("+trueState+")")
-}
-
-func WrongFormatErr(trueFormat string)error{
-	return errors.New("Wrong Format("+trueFormat+")")
+func UndefinedTypeErr() error{
+	return errors.New("Undefind Operation Type")
+} 
+func UndefinedOperationErr() error{
+	return errors.New("Undefind Operation")
+} 
+func InvalidArgumentErr()error{
+	return errors.New("Invalid Operation Argument")
 }

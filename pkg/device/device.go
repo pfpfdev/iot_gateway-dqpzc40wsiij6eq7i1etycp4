@@ -4,52 +4,88 @@ import (
 	"net"
 	"time"
 	"strings"
-	. "../operable"
 	"log"
-	"fmt"
 	"bufio"
+	"sync"
 )
 
 type Device struct{
 	Name string
-	conn net.Conn 
+	conn net.Conn
 	Operables map[string]*Operable
 	state *State
 	LastAlive time.Time
+	mutex sync.Mutex
+	buffer chan string
+	event chan struct{}
 }
 
-func NewDevice(name string,_conn net.Conn) *Device{
+func NewDevice(conn net.Conn) *Device{
 	return &Device{
-		Name:name,
-		conn:_conn,
+		conn:conn,
 		Operables:make(map[string]*Operable),
 		state: NewState(),
 		LastAlive:time.Now(),
+		buffer: make(chan string,1),
+		event: make(chan struct{}),
 	}
 }
 
 func (d *Device)addOperable(name string) (*Operable,error){
-	w:= bufio.NewWriter(d.conn)
-	r:= bufio.NewReader(d.conn)
-	wr := bufio.NewReadWriter(r,w)
-	d.Operables[name]=NewOperable(name,wr)
+	d.Operables[name]=NewOperable(name,d)
 	return d.Operables[name],nil
 }
 
 func (d *Device)finishInit()error{
 	d.state.Set(CONNECTED)
+	d.event <- struct{}{}
 	return nil
 }
 
-func (d *Device)Close(){
-	d.conn.Close()
+func (d *Device)Close()error{
+	close(d.event)
+	close(d.buffer)
+	return d.conn.Close()
+}
+
+func (d *Device)ReadLine()string{
+	return <- d.buffer
+}
+
+func (d *Device)Write(p []byte)(n int,err error){
+	return d.conn.Write(p)
+}
+
+func (d *Device)WaitEvent(){
+	<- d.event
+}
+
+func (d *Device)Communicate(){
+	r := bufio.NewReader(d.conn)
+	name,err := r.ReadString('\n')
+	if err!=nil{
+		log.Print("Socket Connection ",d.conn.RemoteAddr()," made error ",err.Error())
+		return
+	}
+	//CSV的に処理するのでカンマを消す
+	name = strings.Replace(name," ","",-1)
+	//最後に改行があるので削除する
+	d.Name = name[:len(name)-1]
+	for {
+		//入力された文字をdeviceで処理する
+		str,err := r.ReadString('\n')
+		if err!=nil{
+			log.Print("[ERROR] Failed to communicate ",err.Error())
+			return
+		}
+		d.Parse(str[:len(str)-1])
+	}
 }
 
 func (d* Device)Parse(data string){
 	d.LastAlive = time.Now()
 	strs := strings.Split(data," ")
 	if d.state.IsSame(INITIALIZING) {
-		log.Print("String From ",d.Name," : ",data)
 		switch strs[0] {
 		case "ADD":
 			if len(strs) !=2{
@@ -91,6 +127,11 @@ func (d* Device)Parse(data string){
 			return
 		default:
 			log.Print("[ERROR] Undefined Commands")
+		}
+	}else{
+		if len(data)!=0{
+			println(data)
+			d.buffer <- data
 		}
 	}
 }

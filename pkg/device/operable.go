@@ -1,20 +1,20 @@
-package operable
+package device
 
 import (
-	"bufio"
 	"fmt"
 )
 
 type Operable struct{
 	Name string
 	Operations map[string]Operation
-	device *bufio.ReadWriter
+	device *Device
 }
 
-func NewOperable(name string,_device *bufio.ReadWriter) *Operable{
+func NewOperable(name string,_device *Device) *Operable{
 	return &Operable{
 		Name:name,
 		Operations:make(map[string]Operation),
+		device:_device,
 	}
 }
 
@@ -38,10 +38,9 @@ func (o *Operable)Operate(_cmd string,_arg string)(string,error){
 	if !definedType[val.Type].Match([]byte(_arg)){
 		return "",InvalidArgumentErr()
 	}
-	fmt.Fprintf(o.device,"%s,%s,%s\n",o.Name,_cmd,_arg)
-	res,_,err :=o.device.ReadLine()
-	if err!=nil{
-		return "",err
-	}
-	return string(res),nil
+	o.device.mutex.Lock()
+	fmt.Fprintf(o.device,"%s %s %s\n",o.Name,_cmd,_arg)
+	res := o.device.ReadLine()
+	o.device.mutex.Unlock()
+	return res,nil
 }

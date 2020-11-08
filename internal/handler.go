@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"strconv"
+	"log"
 )
 
 var Devices map[string]*device.Device = make(map[string]*device.Device)
@@ -17,6 +18,7 @@ var Units map[string]*unit.Unit = make(map[string]*unit.Unit)
 
 
 func DeviceList(w http.ResponseWriter, r *http.Request){
+	log.Print("Device List Requested")
 	data,_ := json.Marshal(Devices)
 	fmt.Fprintln(w,string(data))
 }
@@ -24,6 +26,7 @@ func DeviceList(w http.ResponseWriter, r *http.Request){
 func DeviceDetail(w http.ResponseWriter, r *http.Request){
 	vars := mux.Vars(r)
 	name := vars["name"]
+	log.Print("Device Detail of ",name," Requested")
 	if _,ok := Devices[name];!ok{
 		errMsg,_ := json.Marshal(map[string]interface{}{"Error":"Undefined Device"})
 		fmt.Fprintln(w,string(errMsg))
@@ -34,6 +37,7 @@ func DeviceDetail(w http.ResponseWriter, r *http.Request){
 }
 
 func UnitList(w http.ResponseWriter, r *http.Request){
+	log.Print("Unit List Requested")
 	data,_ := json.Marshal(Units)
 	fmt.Fprintln(w,string(data))
 }
@@ -48,6 +52,7 @@ func UnitDetail(w http.ResponseWriter, r *http.Request){
 	}
 	token := r.URL.Query().Get("token")
 	if len(token) != 0 {
+		log.Print("Keep Connection")
 		token ,err:= strconv.ParseUint(token,10,64)
 		if err!=nil{
 			errMsg,_ := json.Marshal(map[string]interface{}{"Error":"The token is invalid format"})
@@ -66,12 +71,14 @@ func UnitDetail(w http.ResponseWriter, r *http.Request){
 		fmt.Fprintln(w,string(errMsg))
 		return
 	}else{
+		log.Print("Unit Detail Requested")
 		data,_ := json.Marshal(Units[name])
 		fmt.Fprintln(w,string(data))
 	}
 }
 
 func MakeUnit(w http.ResponseWriter, r *http.Request){
+	log.Print("Unit Making")
 	var data interface{}
 	body, _ := ioutil.ReadAll(r.Body)
 	println(string(body))
@@ -79,7 +86,6 @@ func MakeUnit(w http.ResponseWriter, r *http.Request){
 	if err!=nil{
 		println("[ERROR]",err.Error())
 	}
-	fmt.Printf("%#v\n",data)
 	units,ok := data.(map[string]interface{})
 	if !ok{
 		return
@@ -121,7 +127,8 @@ func MakeBooking(w http.ResponseWriter, r *http.Request){
 	}
 	u:=user.NewUser() 
 	Units[name].Book(u)
-	fmt.Fprintln(w,map[string]interface{}{"token":u.Id})
+	data,_ := json.Marshal(map[string]interface{}{"token":u.Id})
+	fmt.Fprintln(w,string(data))
 }
 
 func Operate(w http.ResponseWriter, r *http.Request){
@@ -140,7 +147,9 @@ func Operate(w http.ResponseWriter, r *http.Request){
 		fmt.Fprintln(w,string(errMsg))
 		return
 	}
-	tokenStr := r.URL.Query().Get("token")
+	query := r.URL.Query()
+	fmt.Printf("%#v\n",query)
+	tokenStr := query.Get("token")
 	if len(tokenStr) == 0 {
 		errMsg,_ := json.Marshal(map[string]interface{}{"Error":"The token is empty"})
 		fmt.Fprintln(w,string(errMsg))
@@ -152,13 +161,21 @@ func Operate(w http.ResponseWriter, r *http.Request){
 		fmt.Fprintln(w,string(errMsg))
 		return
 	}
-	cmd := r.URL.Query().Get("token")
-	if len(cmd) != 0 {
+	cmd := query.Get("cmd")
+	if len(cmd) == 0 {
 		errMsg,_ := json.Marshal(map[string]interface{}{"Error":"The cmd is empty"})
 		fmt.Fprintln(w,string(errMsg))
 		return
 	}
 	if unit.User.Id == token {
-		operable.Operate(r.URL.Query().Get("cmd"),r.URL.Query().Get("arg"))
+		res,err := operable.Operate(query.Get("cmd"),query.Get("arg"))
+		if err!=nil{
+			errMsg,_ := json.Marshal(map[string]interface{}{"Error":err.Error()})
+			fmt.Fprintln(w,string(errMsg))
+			return
+		}
+		response,_ := json.Marshal(map[string]interface{}{"Response":res})
+		fmt.Fprintln(w,string(response))
+		return
 	}
 }
