@@ -11,7 +11,7 @@ type Operable struct{
 	device *bufio.ReadWriter
 }
 
-func NewOperable(name string) *Operable{
+func NewOperable(name string,_device *bufio.ReadWriter) *Operable{
 	return &Operable{
 		Name:name,
 		Operations:make(map[string]Operation),

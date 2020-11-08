@@ -5,33 +5,36 @@ import (
 	"time"
 	. "../user"
 	. "../operable"
+	"log"
 )
 
 const cycle = time.Second * 90
 
 type Unit struct {
 	Name string
-	Operables map[string]Operable
+	Operables map[string]*Operable
 	Queue []*User
 	ticker *time.Ticker
-	user *User
+	User *User
 	lastAssign time.Time
 	mutex sync.Mutex
 }
 
 func NewUnit(name string)*Unit{
+	log.Print("New Unit ", name," Created")
 	return &Unit{
 		Name:name,
-		Operables: make(map[string]Operable),
+		Operables: make(map[string]*Operable),
 		Queue:make([]*User,0),
-		user: nil,
+		User: nil,
 		lastAssign:time.Now(),
 	}
 }
 
 func (u *Unit)Book(user *User){
+	log.Print("New user made booking of ",u.Name)
 	u.mutex.Lock()
-	if u.user == nil{
+	if u.User == nil{
 		u.SetUser(user)
 	}else{
 		u.Queue = append(u.Queue,user)
@@ -41,8 +44,9 @@ func (u *Unit)Book(user *User){
 
 func (u *Unit)Assign(){
 	count := len(u.Queue)
+	log.Print("Assigning ",u.Name," : ", count," users are waiting")
 	if count == 0{
-		u.user = nil
+		u.User = nil
 		return 
 	}
 	first := true
@@ -59,7 +63,8 @@ func (u *Unit)Assign(){
 }
 
 func (u *Unit)SetUser(user *User){
-	u.user = user
+	log.Print("User(",user.Id,") get controls of ",u.Name)
+	u.User = user
 	u.ticker = time.NewTicker(cycle)
 }
 
