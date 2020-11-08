@@ -60,7 +60,6 @@ func handler(conn net.Conn){
 	for {
 		//入力された文字をdeviceで処理する
 		str,err := r.ReadString('\n')
-		log.Print("String From ",conn.RemoteAddr()," : ",str)
 		if err!=nil{
 			connFinished(conn,err)
 			return
