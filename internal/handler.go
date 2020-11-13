@@ -123,7 +123,7 @@ func MakeBooking(w http.ResponseWriter, r *http.Request){
 		return
 	}
 	token := Units[name].Book()
-	data,_ := json.Marshal(map[string]interface{}{"token":token})
+	data,_ := json.Marshal(map[string]interface{}{"Token":token})
 	fmt.Fprintln(w,string(data))
 }
 

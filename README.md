@@ -144,14 +144,12 @@ GET /units
                 },...
             },
             "Queue":[
-                654356375432,
-                423421436, //uint64の待っている人が持つトークン(順序含め)
+                {
+                    "LastTime":"2020-11-13T21:33:16.9206603+09:00",//最終アクセス(有効化)時刻
+                    "Until":"2020-11-13T21:34:28.7914384+09:00",//制御権の有効期限の目安(割り当てられてないならば意味なし)
+                    "IsAlive":true
+                },...
             ],
-            "User":{
-                "Id":17915417927227852411,//token
-                "LastTime":"2020-11-13T19:55:43.3078035+09:00",
-                "IsAlive":true
-            }
         },...
     }
 POST /units
@@ -168,13 +166,17 @@ POST /units/{unitName}
     ここで確保したら/units/{unitName}で順番確認
     定期的にtokenの有効化を行う
     {
-        "token":randomuint64
+        "Token":randomuint64
     }
 GET /units/{unitName}?token={token}
     tokenの更新を行う
     定期的にここにアクセスしTokenの有効化を行う(10~30秒に一度程度)
+    返り値は現在の順番(1が先頭)
+    {
+        "Order":1
+    }    
     トークンが指定されなければユニットに関する情報を取得する
-    返り値は/unitsの限定的なものにつき省略
+    この場合の返り値は/unitsの限定的なものにつき省略
 GET /units/{unitName}/{operableName}?cmd={cmdName}&arg={arg}
     操作を行う
     unitsのUserのIdと同じtokenの人が操作できる
@@ -195,7 +197,7 @@ GET /units/{unitName}/{operableName}?cmd={cmdName}&arg={arg}
 unit64の疑似乱数
 
 暗号的に全く持って安全でないので、ばれるリスクはあるもののそこまで気にする必要はなさげ
-というか現在の実装だと/unitsにアクセスしてしまえば権限横取りし放題
+~~というか現在の実装だと/unitsにアクセスしてしまえば権限横取りし放題~~改善済み
 それは改善予定だが、URL queryはhttpsでも暗号化されないので、パケット見れば読み取り放題
 
 Go言語だとjsonのparseが(丁寧にやらないと)比較的面倒なので、元気があれば直すかも
