@@ -49,6 +49,7 @@ func handler(conn net.Conn){
 }
 
 func DeviceGC(){
+	//定期的に使用されていないデバイスを削除する
 	const Cycle = 10 * time.Second
 	for{
 		for name,device := range Devices {
