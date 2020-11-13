@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"../pkg/device"
 	"../pkg/unit"
-	"../pkg/user"
 	"net/http"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -59,16 +58,14 @@ func UnitDetail(w http.ResponseWriter, r *http.Request){
 			fmt.Fprintln(w,string(errMsg))
 			return
 		}
-		for _,u := range Units[name].Queue{
-			if u.Id == token{
-				u.Alive()
-				data,_ := json.Marshal(Units[name])
-				fmt.Fprintln(w,string(data))
-				return
-			}
+		order := Units[name].Queue.Order(token)
+		if order == -1 {
+			errMsg,_ := json.Marshal(map[string]interface{}{"Error":"The token wasn't issued"})
+			fmt.Fprintln(w,string(errMsg))
 		}
-		errMsg,_ := json.Marshal(map[string]interface{}{"Error":"The token wasn't issued"})
-		fmt.Fprintln(w,string(errMsg))
+		Units[name].Queue[order - 1].Alive()
+		msg,_ := json.Marshal(map[string]interface{}{"Order":order})
+		fmt.Fprintln(w,string(msg))
 		return
 	}else{
 		log.Print("Unit Detail Requested")
@@ -125,9 +122,8 @@ func MakeBooking(w http.ResponseWriter, r *http.Request){
 		fmt.Fprintln(w,string(errMsg))
 		return
 	}
-	u:=user.NewUser() 
-	Units[name].Book(u)
-	data,_ := json.Marshal(map[string]interface{}{"token":u.Id})
+	token := Units[name].Book()
+	data,_ := json.Marshal(map[string]interface{}{"token":token})
 	fmt.Fprintln(w,string(data))
 }
 
@@ -167,7 +163,7 @@ func Operate(w http.ResponseWriter, r *http.Request){
 		fmt.Fprintln(w,string(errMsg))
 		return
 	}
-	if unit.User.Id == token {
+	if unit.Queue.IsFront(token) {
 		res,err := operable.Operate(query.Get("cmd"),query.Get("arg"))
 		if err!=nil{
 			errMsg,_ := json.Marshal(map[string]interface{}{"Error":err.Error()})

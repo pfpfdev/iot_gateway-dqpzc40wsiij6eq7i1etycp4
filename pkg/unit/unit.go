@@ -13,9 +13,8 @@ const cycle = time.Second * 90
 type Unit struct {
 	Name string
 	Operables map[string]*Operable
-	Queue []*User
+	Queue UserQueue
 	ticker *time.Ticker
-	User *User
 	lastAssign time.Time
 	mutex sync.Mutex
 }
@@ -25,55 +24,39 @@ func NewUnit(name string)*Unit{
 	return &Unit{
 		Name:name,
 		Operables: make(map[string]*Operable),
-		Queue:make([]*User,0),
-		User: nil,
+		Queue:NewUserQueue(),
 		lastAssign:time.Now(),
 	}
 }
 
-func (u *Unit)Book(user *User){
+func (u *Unit)Book()uint64{
 	log.Print("New user made booking of ",u.Name)
 	u.mutex.Lock()
-	if u.User == nil{
-		u.SetUser(user)
-	}else{
-		u.Queue = append(u.Queue,user)
+	token := u.Queue.AddWaiting()
+	if len(u.Queue) == 1 {
+		log.Print("User(",u.Queue.GetFront(),") get controls of ",u.Name)
+		u.Queue[0].Until = time.Now().Add(cycle)
+		u.Start()
 	}
 	u.mutex.Unlock()
-}
-
-func (u *Unit)Assign(){
-	count := len(u.Queue)
-	log.Print("Assigning ",u.Name," : ", count," users are waiting")
-	if count == 0{
-		u.User = nil
-		return 
-	}
-	first := true
-	for i:= range u.Queue{
-		if u.Queue[i].LastTime.After(u.lastAssign) {
-			u.Queue[i].IsAlive = false
-		}
-		if first {
-			u.SetUser(u.Queue[i])
-			u.Queue = u.Queue[i+1:]
-			first = false
-		}
-	}
-}
-
-func (u *Unit)SetUser(user *User){
-	log.Print("User(",user.Id,") get controls of ",u.Name)
-	u.User = user
-	u.ticker = time.NewTicker(cycle)
+	return token
 }
 
 func (u *Unit)Start(){
 	go func(){
+		u.ticker = time.NewTicker(cycle)
 		for{
 			<- u.ticker.C
 			u.mutex.Lock()
-			u.Assign()
+			u.Queue.Next(u.lastAssign)
+			log.Print(len(u.Queue)," Users are waiting for ",u.Name)
+			if len(u.Queue) == 0{
+				break
+			}else{
+				log.Print("User(",u.Queue.GetFront(),") get controls of ",u.Name)
+				u.Queue[0].Until = time.Now().Add(cycle)
+			}
+			u.lastAssign = time.Now()
 			u.mutex.Unlock()
 		}
 	}()
