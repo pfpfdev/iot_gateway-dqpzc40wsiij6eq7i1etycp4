@@ -3,6 +3,9 @@
 httpプロトコルを用いてIoT機器を排他制御するためのサーバー。
 socketサーバーに接続したIoT機器に対して、web側から管理、制御を行うことができる。
 
+ソースコードのコメント/リファクタリングは基本しない予定です。
+使い捨てのコードで適当に書いた感じなので
+
 ## 使い方
 
 ### IoT機器側
@@ -77,7 +80,8 @@ APIのエンドポイントは以下のようにマッピングされている�
 ```json
 GET /devices
     接続済みのIoT機器一覧を表示する。
-    Operables以下の情報は削除予定
+    ~~Operables以下の情報は削除予定~~
+    削除しません。詳細表示が意味なくなるけど、意外と削除するのがめんどくさそうだったので今回はこのままいきます
     {
         "DeviceName":{
             "Name":"DeviceName",
@@ -112,13 +116,93 @@ GET /device/{name}
     }
 GET /units
     ユニットの情報を一覧表示する
-    
+    {
+        "UnitName":{
+            "Name":"UnitName",
+            "Operables":{
+                "ope1":{
+                    "Name":"ope1",
+                    "Operations":{
+                        "LED":{
+                            "Cmd":"LED",
+                            "Type":"OnOff"
+                        },
+                        "speed":{
+                            "Cmd":"speed",
+                            "Type":"Hundred"
+                        }
+                    }
+                },
+                "ope2":{
+                    "Name":"ope2",
+                    "Operations":{
+                        "power":{
+                            "Cmd":"power",
+                            "Type":"OnOff"
+                        }
+                    }
+                },...
+            },
+            "Queue":[
+                654356375432,
+                423421436, //uint64の待っている人が持つトークン(順序含め)
+            ],
+            "User":{
+                "Id":17915417927227852411,//token
+                "LastTime":"2020-11-13T19:55:43.3078035+09:00",
+                "IsAlive":true
+            }
+        },...
+    }
+POST /units
+    ユニットの構成を設定する
+    以下のフォーマットをBODYで送信する
+    {
+        "UnitName":{
+            "DeviceName of operables":["OperableName1","OperableName1"],
+            "Other Device":["OperableName1","OperableName1"]
+        }
+    }
+POST /units/{unitName}
+    整理番号(制御に必要なトークン)の確保
+    ここで確保したら/units/{unitName}で順番確認
+    定期的にtokenの有効化を行う
+    {
+        "token":randomuint64
+    }
+GET /units/{unitName}?token={token}
+    tokenの更新を行う
+    定期的にここにアクセスしTokenの有効化を行う(10~30秒に一度程度)
+    トークンが指定されなければユニットに関する情報を取得する
+    返り値は/unitsの限定的なものにつき省略
+GET /units/{unitName}/{operableName}?cmd={cmdName}&arg={arg}
+    操作を行う
+    unitsのUserのIdと同じtokenの人が操作できる
 ```
-	r.HandleFunc("/devices",DeviceList)
-	r.HandleFunc("/devices/{name}",DeviceDetail)
-	r.HandleFunc("/units",UnitList).Methods("GET")
-	r.HandleFunc("/units",MakeUnit).Methods("POST")
-	r.HandleFunc("/units/{name}",UnitDetail).Methods("GET")
-	r.HandleFunc("/units/{name}",MakeBooking).Methods("POST")
-	r.HandleFunc("/units/{name}/{operable}",Operate)
 
+## 実装
+
+### 順番管理の戦略
+
+1. 整理番号を取得した人を並べる
+2. 先着順で制御権を与える
+3. 一定時間後に制御を制御権を没収
+4. 次の順番の人に制御権を渡す
+   1. ただし一定時間の間に最低一回tokenの有効化を行った人に限る
+
+#### Token
+
+unit64の疑似乱数
+
+暗号的に全く持って安全でないので、ばれるリスクはあるもののそこまで気にする必要はなさげ
+というか現在の実装だと/unitsにアクセスしてしまえば権限横取りし放題
+それは改善予定だが、URL queryはhttpsでも暗号化されないので、パケット見れば読み取り放題
+
+Go言語だとjsonのparseが(丁寧にやらないと)比較的面倒なので、元気があれば直すかも
+
+## TODO
+
++ ログのオンライン化
++ 権限の分離
++ token周りを最低限使えるものに
++ テストの作成
