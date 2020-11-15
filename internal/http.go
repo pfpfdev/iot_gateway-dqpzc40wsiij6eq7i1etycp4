@@ -22,6 +22,7 @@ func HttpServer(opt *HttpOpt){
 	r.HandleFunc("/log",auth(LogFetch))
 	//ログを使用するように設定
 	r.Use(loggingMiddleware)
+	r.Use(corsMiddleware)
 	//サーバーを設定して開始
 	http.Handle("/",r)
 	log.Print("Http Server Started on "+strconv.Itoa(*opt.Port))
@@ -32,6 +33,13 @@ func loggingMiddleware(next http.Handler) http.Handler {
 	//ログを表示するためのミドルウェア
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         log.Print("[HTTP] ",r.URL.Path," (",r.Method,") from ",r.RemoteAddr)
+        next.ServeHTTP(w, r)
+    })
+}
+
+func corsMiddleware(next http.Handler)http.Handler{
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Access-Control-Allow-Origin", "*")
         next.ServeHTTP(w, r)
     })
 }
