@@ -78,7 +78,6 @@ func (d *Device)Communicate(){
 			log.Print("[ERROR] Failed to communicate ",err.Error())
 			return
 		}
-		print(str)
 		d.Parse(str[:len(str)-1])
 	}
 }

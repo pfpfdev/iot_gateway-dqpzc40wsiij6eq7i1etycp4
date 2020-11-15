@@ -4,20 +4,17 @@ import (
 	"net"
 	"../pkg/device"
 	"log"
-	"time"
+	"strconv"
 )
 
-func SocketServer(){
+func SocketServer(opt *SocketOpt){
 	//サーバーの開始
-	listener, err := net.Listen("tcp", "0.0.0.0:8081")
+	listener, err := net.Listen("tcp", "0.0.0.0:"+strconv.Itoa(*opt.Port))
 
     if err != nil {
         panic(err)
 	}
-	log.Print("Socket Server Started")
-	defer listener.Close()
-
-	go DeviceGC()
+	log.Print("Socket Server Started on "+strconv.Itoa(*opt.Port))
 
 	//コネクションのハンドリング
     for {
@@ -46,19 +43,4 @@ func handler(conn net.Conn){
 	Devices[d.Name]=d
 	log.Print("New Device Defined : ",d.Name,"(",conn.RemoteAddr(),")")
 	d.WaitEvent()
-}
-
-func DeviceGC(){
-	//定期的に使用されていないデバイスを削除する
-	const Cycle = 10 * time.Second
-	for{
-		for name,device := range Devices {
-			if device.LastAlive.Before(time.Now().Add(-Cycle)) {
-				log.Print(name," was deleted by GC")
-				device.Close()
-				delete(Devices,name)
-			}
-		}
-		time.Sleep(Cycle)
-	}
 }

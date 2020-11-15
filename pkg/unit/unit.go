@@ -8,8 +8,6 @@ import (
 	"log"
 )
 
-const cycle = time.Second * 90
-
 type Unit struct {
 	Name string
 	Operables map[string]*Operable
@@ -17,6 +15,12 @@ type Unit struct {
 	ticker *time.Ticker
 	lastAssign time.Time
 	mutex sync.Mutex
+}
+
+var cycle = time.Second * 90
+
+func SetCycle(_cycle int){
+	cycle = time.Duration(_cycle) * time.Second
 }
 
 func NewUnit(name string)*Unit{
