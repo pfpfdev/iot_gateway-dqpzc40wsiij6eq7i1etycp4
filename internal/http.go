@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"strconv"
+	"path/filepath"
 )
 
 func HttpServer(opt *HttpOpt){
@@ -20,6 +21,12 @@ func HttpServer(opt *HttpOpt){
 	r.HandleFunc("/units/{name}",MakeBooking).Methods("POST")
 	r.HandleFunc("/units/{name}/{operable}",Operate)
 	r.HandleFunc("/log",auth(LogFetch))
+	//静的ファイルの設定
+	for _,path := range opt.StaticPath{
+		dirName := filepath.Base(path)
+		fs := http.FileServer(http.Dir(path))
+		http.Handle("/"+dirName+"/", http.StripPrefix("/"+dirName+"/",fs))
+	}
 	//ログを使用するように設定
 	r.Use(loggingMiddleware)
 	r.Use(corsMiddleware)

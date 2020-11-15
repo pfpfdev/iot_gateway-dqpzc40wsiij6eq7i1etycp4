@@ -8,6 +8,10 @@ HttpServer:
   BasicAuth:
     User: "someone"
     Password: "somepassword"
+  StaticPath:
+    # 静的ファイルのサーブ
+    # フォルダ名をプレフィクスとしてファイルをサーブ
+    - "/tmp" #この場合は http://server.address/tmp/file_in_the_dir.txt
 
 SocketServer:
   Port: 8081

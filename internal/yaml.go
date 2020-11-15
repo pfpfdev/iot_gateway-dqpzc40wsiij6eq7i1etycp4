@@ -17,6 +17,7 @@ type SocketOpt struct{
 type HttpOpt struct{
 	Port *int `yaml:"Port"`
 	BasicAuth *BasicAuthOpt `yaml:"BasicAuth"`
+	StaticPath []string `yaml:"StaticPath"`
 }
 
 type BasicAuthOpt struct{
@@ -81,6 +82,9 @@ func Verify(conf *YamlConfig){
 	if conf.HttpServer.BasicAuth.Password == nil{
 		conf.HttpServer.BasicAuth.Password = new(string)
 		*conf.HttpServer.BasicAuth.Password = "somepassword"
+	}
+	if conf.HttpServer.StaticPath == nil{
+		conf.HttpServer.StaticPath = make([]string,0)
 	}
 	if conf.Strategy == nil{
 		conf.Strategy = new(StrategyOpt)
