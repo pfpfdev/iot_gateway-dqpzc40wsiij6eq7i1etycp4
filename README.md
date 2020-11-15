@@ -77,7 +77,7 @@ Normal phaseでは一定時間(10秒)以上通信がないIoT機器は落ちた�
 HTTPサーバーは規定のポート(8080)で実行される。
 APIのエンドポイントは以下のようにマッピングされている。
 
-```json
+```js
 GET /devices
     接続済みのIoT機器一覧を表示する。
     ~~Operables以下の情報は削除予定~~
@@ -181,6 +181,16 @@ GET /units/{unitName}?token={token}
 GET /units/{unitName}/{operableName}?cmd={cmdName}&arg={arg}
     操作を行う
     unitsのUserのIdと同じtokenの人が操作できる
+GET /log?offset={offset}
+    ログの取得
+    Offsetを指定すると続きを読み取れる
+    ラウンドロビンとか考えてないので定期的に再起動したほうがいいかもしれない{要検証}
+    BASIC認証が必要
+    5秒に一度くらい読み取って、logファイルへのアクセスログをフィルタリングすれば良い気が
+    {
+        "Log":"LogText\n",
+        "Offset":123
+    }
 ```
 
 ## 実装
@@ -207,5 +217,4 @@ Go言語だとjsonのparseが(丁寧にやらないと)比較的面倒なので�
 
 ## TODO
 
-+ ログのオンライン化
 + テストの作成

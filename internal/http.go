@@ -18,6 +18,7 @@ func HttpServer(){
 	r.HandleFunc("/units/{name}",UnitDetail).Methods("GET")
 	r.HandleFunc("/units/{name}",MakeBooking).Methods("POST")
 	r.HandleFunc("/units/{name}/{operable}",Operate)
+	r.HandleFunc("/log",LogFetch)
 	//ログを使用するように設定
 	r.Use(loggingMiddleware)
 	//サーバーを設定して開始

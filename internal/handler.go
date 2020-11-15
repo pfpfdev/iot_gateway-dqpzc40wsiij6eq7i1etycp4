@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"strconv"
 	"log"
+	"os"
 )
 
 var Devices map[string]*device.Device = make(map[string]*device.Device)
@@ -175,3 +176,32 @@ func Operate(w http.ResponseWriter, r *http.Request){
 		return
 	}
 }
+
+func LogFetch(w http.ResponseWriter, r *http.Request){
+	fd, err := os.Open("/tmp/iot_gateway.log")
+	if err != nil{
+		errMsg,_ := json.Marshal(map[string]interface{}{"Error":"Internal Log Error"})
+		fmt.Fprintln(w,string(errMsg))
+		return 
+	}
+	defer fd.Close()
+	offsetStr := r.URL.Query().Get("offset")
+	offset := 0
+	if len(offsetStr) > 0{
+		offset ,err = strconv.Atoi(offsetStr)
+		if err != nil {
+			offset = 0
+		}
+	}
+	fd.Seek(int64(offset),0)
+	bytes,err := ioutil.ReadAll(fd)
+	if err!=nil{
+		errMsg,_ := json.Marshal(map[string]interface{}{"Error":"Internal Reading Error"})
+		fmt.Fprintln(w,string(errMsg))
+		return 
+	}
+	response,_ := json.Marshal(map[string]interface{}{"Log":string(bytes),"Offset":offset+len(bytes)})
+	fmt.Fprintln(w,string(response))
+	return
+}
+
