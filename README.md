@@ -155,6 +155,7 @@ GET /units
 POST /units
     ユニットの構成を設定する
     以下のフォーマットをBODYで送信する
+    BASIC認証が必要
     {
         "UnitName":{
             "DeviceName of operables":["OperableName1","OperableName1"],
@@ -197,7 +198,9 @@ GET /units/{unitName}/{operableName}?cmd={cmdName}&arg={arg}
 unit64の疑似乱数
 
 暗号的に全く持って安全でないので、ばれるリスクはあるもののそこまで気にする必要はなさげ
+
 ~~というか現在の実装だと/unitsにアクセスしてしまえば権限横取りし放題~~改善済み
+
 それは改善予定だが、URL queryはhttpsでも暗号化されないので、パケット見れば読み取り放題
 
 Go言語だとjsonのparseが(丁寧にやらないと)比較的面倒なので、元気があれば直すかも
@@ -205,6 +208,4 @@ Go言語だとjsonのparseが(丁寧にやらないと)比較的面倒なので�
 ## TODO
 
 + ログのオンライン化
-+ 権限の分離
-+ token周りを最低限使えるものに
 + テストの作成

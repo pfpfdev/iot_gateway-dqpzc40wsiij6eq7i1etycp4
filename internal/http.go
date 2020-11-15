@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"github.com/gorilla/mux"
 	"log"
+	"os"
 )
 
 func HttpServer(){
@@ -13,7 +14,7 @@ func HttpServer(){
 	r.HandleFunc("/devices",DeviceList)
 	r.HandleFunc("/devices/{name}",DeviceDetail)
 	r.HandleFunc("/units",UnitList).Methods("GET")
-	r.HandleFunc("/units",MakeUnit).Methods("POST")
+	r.HandleFunc("/units",ManageFunction(MakeUnit)).Methods("POST")
 	r.HandleFunc("/units/{name}",UnitDetail).Methods("GET")
 	r.HandleFunc("/units/{name}",MakeBooking).Methods("POST")
 	r.HandleFunc("/units/{name}/{operable}",Operate)
@@ -30,4 +31,19 @@ func loggingMiddleware(next http.Handler) http.Handler {
         log.Print("[HTTP] ",r.URL.Path," (",r.Method,") from ",r.RemoteAddr)
         next.ServeHTTP(w, r)
     })
+}
+
+
+var basicUser = "kokenuser"
+var basicPass = os.Getenv("PASSWORD")
+
+func ManageFunction(fn http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, pass, _ := r.BasicAuth()
+		if user != basicUser || pass != basicPass {
+			http.Error(w, "Unauthorized.", 401)
+			return
+		}
+		fn(w, r)
+	}
 }
