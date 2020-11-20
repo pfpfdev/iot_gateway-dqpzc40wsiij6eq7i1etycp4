@@ -10,6 +10,6 @@ type Operation struct{
 }
 
 var definedType = map[string]*regexp.Regexp{
-	"OnOff":regexp.MustCompile("^[On|Off]$"),
+	"OnOff":regexp.MustCompile("^On|Off$"),
 	"Hundred":regexp.MustCompile("^[0-9]{1,2}$"),
 }

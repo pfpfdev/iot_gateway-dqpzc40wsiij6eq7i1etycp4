@@ -31,11 +31,12 @@ func (o *Operable)RegisterOperation(_cmd string,_type string)error{
 }
 
 func (o *Operable)Operate(_cmd string,_arg string)(string,error){
+	println(_arg)
 	val,exist := o.Operations[_cmd]
 	if !exist{
 		return "",UndefinedOperationErr()
 	}
-	if !definedType[val.Type].Match([]byte(_arg)){
+	if !(definedType[val.Type].Match([]byte(_arg))){
 		return "",InvalidArgumentErr()
 	}
 	o.device.mutex.Lock()

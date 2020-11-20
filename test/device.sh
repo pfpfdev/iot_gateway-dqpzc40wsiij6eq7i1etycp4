@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "Device1"
+echo "Device2"
 echo "ADD ope1"
 echo "REG ope1 LED OnOff"
 echo "REG ope1 speed Hundred"
